@@ -1,2 +1,2 @@
 # dev-inf
-Infrastructure as code for to development projects
+Infrastructure as code for development projects
