@@ -1,0 +1,5 @@
+---
+
+- name: Hello world
+  command: echo Hello from npm-workstations
+

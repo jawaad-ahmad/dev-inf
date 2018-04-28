@@ -1,0 +1,10 @@
+---
+# This playbook deploys the whole application stack in this site.
+
+- name: deploy development clients
+  hosts: dev-clients
+  user: vagrant
+  roles:
+     - basic-clients
+     - npm-workstations
+
