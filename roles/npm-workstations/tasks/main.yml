@@ -1,9 +1,5 @@
 ---
 
-# TODO Delete
-- name: Hello world
-  command: echo Hello from npm-workstations
-
 # Don't install node/npm from the debian packages; it's too old.
 #- include: ../../common/tasks/pkg-install.yml package=nodejs
 #- include: ../../common/tasks/pkg-install.yml package=nodejs-legacy
