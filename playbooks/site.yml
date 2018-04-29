@@ -1,10 +1,21 @@
 ---
-# This playbook deploys the whole application stack in this site.
+# This playbook deploys the whole application stack for a development VDI.
+
+- name: apply common configuration to all nodes
+  hosts: all
+  user: ansible
+  vars_files:
+     - group_vars/all.yml
+     - [ "group_vars/arch_{{ ansible_architecture }}.yml", "group_vars/arch_defaults.yml" ]
+  roles:
+     - common
 
 - name: deploy development clients
   hosts: dev-clients
-  user: vagrant
+  user: ansible
+  vars_files:
+     - group_vars/all.yml
+     - [ "group_vars/arch_{{ ansible_architecture }}.yml", "group_vars/arch_defaults.yml" ]
   roles:
-     - basic-clients
+     - basic-workstations
      - npm-workstations
-
