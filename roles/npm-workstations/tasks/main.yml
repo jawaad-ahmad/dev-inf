@@ -1,5 +1,26 @@
 ---
 
+# TODO Delete
 - name: Hello world
   command: echo Hello from npm-workstations
+
+# Don't install node/npm from the debian packages; it's too old.
+#- include: ../../common/tasks/pkg-install.yml package=nodejs
+#- include: ../../common/tasks/pkg-install.yml package=nodejs-legacy
+#- include: ../../common/tasks/pkg-install.yml package=npm
+
+- name: unzip node 6.10.1 archive
+  unarchive:
+     src: "{{ downloaded_applications_home }}/node-v6.10.1-linux-x64.tar.xz"
+     dest: /opt
+     creates: "{{ node_home }}/bin/node"
+  become: yes
+
+- name: create symlink to node executable
+  file: src={{ node_home }}/bin/node dest=/usr/local/bin/node owner=root group=root state=link
+  become: yes
+
+- name: create symlink to npm executable
+  file: src={{ node_home }}/bin/npm dest=/usr/local/bin/npm owner=root group=root state=link
+  become: yes
 
