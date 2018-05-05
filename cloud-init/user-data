@@ -1,0 +1,36 @@
+#cloud-config
+write_files:
+  - path: /etc/apt/sources.list.d/cloud-init.tmp.list
+    content: |
+      deb ftp://ftp.us.debian.org/debian jessie main contrib non-free
+    owner: root:root
+    permissions: 644
+  - path: /root/.gitconfig
+    content: |
+      [submodule]
+      	recurse = true
+    owner: root:root
+    permissions: 644
+
+packages:
+  - git
+  - python-jinja2
+  - python-paramiko
+  - python-httplib2
+  - python-crypto
+  - python-setuptools
+  - sshpass
+
+mounts:
+  - [ /dev/sr0, /media/cdrom0, auto, "ro" ]
+
+runcmd:
+  - dpkg --install /media/cdrom0/software/applications/ansible/ansible_2.2.1.0-1ppa~trusty_all.deb
+  - /bin/rm /etc/apt/sources.list.d/cloud-init.tmp.list
+  - ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+# TODO Run git as someone other than root? change .gitconfig path above
+  - git clone --recursive https://github.com/jawaad-ahmad/dev-inf.git /root/repo/dev-inf
+  - cd /root/repo/dev-inf
+# TODO
+#  - ./init.sh
+  - ansible-playbook site.yml

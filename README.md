@@ -32,18 +32,77 @@ Variables
 
 The following variables are used throughout this procedure:
 
-   | Key              | Value        |
-   |------------------|--------------|
-   | INSTALL_ISO_PATH | /path/to/downloaded/Debian/jessie/debian-8.5.0-amd64-DVD-1.iso |
-   | EXPORTED_VMS     | /path/to/ova |
-   | VMNAME           | vdi          |
-   | HOSTNAME         | vdi          |
-   | USER_FULLNAME    | Ansible      |
-   | USERNAME         | ansible      |
-   | PASSWORD         | ansible      |
+   | Key               | Value          |
+   |-------------------|----------------|
+   | INSTALL_ISO_PATH  | /path/to/downloaded/Debian/jessie/debian-8.5.0-amd64-DVD-1.iso |
+   | EXPORTED_VMS      | /path/to/ova   |
+   | ANSIBLE_DATA_HOME | /path/to/files |
+   | VM_NAME           | vdi            |
+   | HOST_NAME         | vdi            |
+   | USER_FULLNAME     | Ansible        |
+   | USERNAME          | ansible        |
+   | PASSWORD          | ansible        |
 
 
-Create cloud-init Disc
+Provision Base Instance
+================================================================================
+
+Using the vdi-base.ova and the cloud-init-seed.iso built as described below,
+this section provisions a new VDI.
+
+    host$ VBoxManage import "${EXPORTED_VMS}/vdi-base.ova" --vsys 0 --vmname ${VM_NAME} && VBoxManage storageattach ${VM_NAME} --storagectl "IDE" --port 0 --device 0 --type dvddrive --medium "${EXPORTED_VMS}/cloud-init-seed.iso"
+
+Start the VM:
+
+    host$ VBoxManage startvm ${VM_NAME}
+
+Wait for the VM to power itself down. This should take around TODO minutes.
+
+If desired, tail /var/log/syslog on the VM to monitor cloud-init progress.
+
+If there is any trouble, run the following to destroy and recreate the VM:
+
+    host$ VBoxManage controlvm ${VM_NAME} poweroff; VBoxManage unregistervm ${VM_NAME} --delete; sleep 2; VBoxManage import "${EXPORTED_VMS}/vdi-base.ova" --vsys 0 --vmname ${VM_NAME} && VBoxManage storageattach ${VM_NAME} --storagectl "IDE" --port 0 --device 0 --type dvddrive --medium "${EXPORTED_VMS}/cloud-init-seed.iso" && VBoxManage startvm ${VM_NAME}
+
+Note that the command above will power down the VM hard.
+
+
+Next Steps
+================================================================================
+
+Depending on the length of time provisioning took, you might be tempted to
+run through the Export Base VM section to make another export of the
+provisioned VM. There is nothing wrong with this step, but simply remember that
+the exported VM will be frozen in time while the git repository will continue
+to evolve.
+
+As a new VM is provisioned off of the OVA, be sure to re-run Ansible upon
+provisioning to make sure you have the latest changes.
+
+
+Internet Downloads
+================================================================================
+
+**Note:** This section only needs to be run once to create the seed.iso
+file. If this section was previously run, then it can be skipped unless
+rebuild of the seed.iso is desired.
+
+**Note:** The following expects a network connection is available to the
+Internet.
+
+1. Download Debian ISO (TODO which one?) and save as ${INSTALL_ISO_PATH}.
+
+1. Clone the git repo containing the VDI infrastructure.
+
+    $ cd ~/repo
+    $ git clone https://github.com/jawaad-ahmad/dev-inf
+    $ cd dev-inf
+    $ ./init.sh
+
+(TODO init.sh does not yet exist.)
+
+
+Create cloud-init-seed.iso
 ================================================================================
 
 **Note:** This section only needs to be run once to create the seed.iso
@@ -55,50 +114,22 @@ will take additional time to complete. If desired, skip to the next section to
 get the VM installation going, and then come back to run through these steps
 while waiting for the installation to complete.
 
-(TODO Can this be changed to use an offline copy of Ansible instead of the PPA?)
-
-(TODO Change to use the dev-inf repo)
-
-In a terminal, run the following:
+In a terminal on the host, run the following:
 
     $ CI_HOME=/tmp/cloud-init
     $ mkdir -p "${CI_HOME}"
 
-Create the user-data file:
+Copy the cloud-init files:
 
-    $ cat << END_OF_FILE > "${CI_HOME}/user-data"
-    #cloud-config
-    write_files:
-      - path: /etc/apt/sources.list.d/cloud-init.tmp.list
-        content: |
-          deb ftp://ftp.us.debian.org/debian jessie main contrib non-free
-        owner: root:root
-        permissions: 644
-    
-    apt_sources:
-      - source: "ppa:ansible/ansible"
-    
-    packages:
-      - ansible
-      - git
-    
-    runcmd:
-      - /bin/rm /etc/apt/sources.list.d/cloud-init.tmp.list
-      - 'git clone https://gitlab.com/markovuksanovic/playbooks.git'
-      - 'ansible-playbook -vvvv /playbooks/dev-machine.yml >>/tmp/ansible-output.txt 2>&1'
-    END_OF_FILE
-
-Create the meta-data file:
-
-    $ cat << END_OF_FILE > "${CI_HOME}/meta-data"
-    hostname: vdi
-    local-hostname: vdi
-    END_OF_FILE
+    $ cp ~/repo/dev-inf/cloud-init/user-data "${CI_HOME}/user-data"
+    $ cp ~/repo/dev-inf/cloud-init/meta-data "${CI_HOME}/meta-data"
+    $ mkdir -p ${CI_HOME}/software/applications
+    $ cp -a {${ANSIBLE_DATA_HOME},${CI_HOME}}/software/applications/ansible
 
 Generate the cloud-init seed ISO:
 
     $ mkdir -p "${EXPORTED_VMS}/cloud-init"
-    $ genisoimage -output "${EXPORTED_VMS}/cloud-init-seed.iso" -volid cidata -R -J "${CI_HOME}/user-data" "${CI_HOME}/meta-data"
+    $ genisoimage -output "${EXPORTED_VMS}/cloud-init-seed.iso" -volid cidata -R -J "${CI_HOME}"
 
 
 Bootstrap Base Install
@@ -108,43 +139,33 @@ Bootstrap Base Install
 file. If this section was previously run, then it can be skipped unless
 rebuild of the vdi-base.ova is desired.
 
-**Note:** The following expects a network connection is available to the
-Internet.
+**Note:** This section assumes no network connection is available. If the steps
+above have been completed adequately, then the remainder of this procedure can
+be completed offline with one exception.
 
-1. Download Debian ISO (TODO which one?).
+1. Run the following to create the VM.
 
-1. Clone the git repo containing the VDI infrastructure.
+    $ common-inf/scripts/create-vbox-vm.sh ${VM_NAME} auto 512 10240 ${INSTALL_ISO_PATH}
 
-    $ cd ~/repo
-    $ git clone https://github.com/jawaad-ahmad/dev-inf
-    $ cd dev-inf
-    $ ./init.sh
+1. Set Networking to Host-only Adapter:
 
-(TODO init.sh does not yet exist.)
-
-**Note:** The remainder of this section assumes no network connection is
-available. If the steps above have been completed adequately, then the
-remainder of this procedure can be completed offline.
-
-    $ common-inf/scripts/create-vbox-vm.sh ${VMNAME} auto 512 10240 ${INSTALL_ISO_PATH}
-
-(**TODO:** Does create-vbox-vm.sh create the VM with host-only networking? (No.) The steps below appear to assume host-only on the 192.168.56.x subnet for eth1.)
+    $ VBoxManage modifyvm ${VM_NAME} --nic1 hostonly --hostonlyadapter1 vboxnet0
 
 1. Start the VM:
 
-    $ VBoxManage startvm ${VMNAME}
+    $ VBoxManage startvm ${VM_NAME}
 
-Follow the prompts:
+1. Follow the prompts:
 
   * Boot menu: Install
   * Select a language: English
   * Select your location: United States
   * Configure the keyboard: American English
   * Configure the network:
-     * eth1
-     * Continue without a default route? Yes [TODO]
-     * Name server addresses: (blank) [TODO]
-     * Hostname: $(HOSTNAME)
+     * eth0
+     * Continue without a default route? Yes
+     * Name server addresses: (blank)
+     * Hostname: $(HOST_NAME)
      * Domain name: (blank)
   * Set up users and passwords:
      * Root password: (blank)
@@ -153,7 +174,7 @@ Follow the prompts:
      * Username: $(USERNAME)
      * Password: $(PASSWORD)
      * Re-enter password: $(PASSWORD)
-  * Configure the clock: Central [TODO]
+  * Configure the clock: Central
   * Partition disks
      * Guided - use entire disk
      * Select disk: SCSI1
@@ -167,7 +188,7 @@ Follow the prompts:
   * Software selection:
      * Uncheck Debian desktop environment
      * Uncheck print server
-     * Check SSH server
+     * Check SSH server **(IMPORTANT)**
      * Leave standard system utilities checked
      * Continue
   * Install the GRUB boot loader on a hard disk:
@@ -175,10 +196,10 @@ Follow the prompts:
      * /dev/sda
   * Finish the installation: Continue
 
-Remove any installation CDs or USB drives and reboot the VM. Do not power off
+1. Remove any installation CDs or USB drives and reboot the VM. Do not power off
 the VM at this point; let it continue to come up.
 
-Set BIOS boot order as applicable to boot from the appropriate drive.
+1. Set BIOS boot order as applicable to boot from the appropriate drive.
 
 
 Verify Networking
@@ -188,16 +209,17 @@ Verify Networking
 file. If this section was previously run, then it can be skipped unless
 rebuild of the vdi-base.ova is desired.
 
-Log-in as $(USERNAME).
+To find out the VM's IP address, log-in as $(USERNAME) from the VM console and
+type:
 
     vdi$ /sbin/ifconfig -a
 
-Verify eth1 has an IP address available: 192.168.56.___
+Verify eth0 has an IP address available: 192.168.56.___
 
-From the physical host, try to ssh into the VM using this IP address.
+From a terminal on the host, try to ssh into the VM using this IP address.
 
     host$ vdi_ip_addr=192.168.56.___
-    host$ ssh ansible@${vdi_ip_addr}
+    host$ ssh ${USERNAME}@${vdi_ip_addr}
     Enter password:
     vdi$
 
@@ -206,8 +228,7 @@ From the VM, verify the host is available:
     vdi$ ssh user@192.168.56.1
     Enter password:
     host$ exit
-    vdi$ exit
-    host$
+    vdi$
 
 
 Install Cloud-Init
@@ -217,11 +238,64 @@ Install Cloud-Init
 file. If this section was previously run, then it can be skipped unless
 rebuild of the vdi-base.ova is desired.
 
-(TODO Now this assumes we have a connection to the Internet. When did this happen?)
+**Note:** This section needs the cloud-init-seed.iso image created in the
+**Create cloud-init-seed.iso** section. Ensure that section is run prior to
+continuing.
 
-Run the following in a terminal on the VDI host:
+On the host:
+
+    host$ VBoxManage storageattach ${VM_NAME} --storagectl "IDE" --port 0 --device 0 --type dvddrive --medium "${EXPORTED_VMS}/cloud-init-seed.iso"
+
+Run the following in a terminal on the VDI guest:
+
+(TODO clean-up)
 
     vdi$ sudo -i
+    root# mount /media/cdrom0
+    root# for p in \
+       python-cheetah_2.4.4-3_amd64.deb \
+       python-configobj_5.0.6-1_all.deb \
+       python-jsonpatch_1.3-5_all.deb \
+       python-oauth_1.0.1-4_all.deb \
+       python-prettytable_0.7.2-3_all.deb \
+       python-serial_2.6-1.1_all.deb \
+       python-urllib3_1.9.1-3_all.deb \
+       python-json-pointer_1.0-2_all.deb \
+       libyaml-0-2_0.1.6-3_amd64.deb \
+       python-requests_2.4.3-6_all.deb \
+       python-boto_2.34.0-2_all.deb \
+       python-yaml_3.11-2_amd64.deb \
+       libpython3.4-minimal_3.4.2-1_amd64.deb \
+       libmpdec2_2.4.1-1_amd64.deb \
+       libpython3.4-stdlib_3.4.2-1_amd64.deb \
+       libpython3-stdlib_3.4.2-2_amd64.deb \
+       python3.4-minimal_3.4.2-1_amd64.deb \
+       python3-minimal_3.4.2-2_amd64.deb \
+       python3.4_3.4.2-1_amd64.deb \
+
+       python3_3.4.2-2_amd64.deb \
+       python3-apt_0.9.3.12_amd64.deb \
+       dh-python_1.20141111-2_all.deb \
+       unattended-upgrades_0.83.3.2+deb8u1_all.deb \
+       python-software-properties_0.92.25debian1_all.deb \
+       cloud-init_0.7.6~bzr976-2_all.deb;
+    do
+       dpkg --install /media/cdrom0/software/applications/ansible/${p};
+    done
+
+
+
+ansible_2.2.1.0-1ppa~trusty_all.deb
+	cloud-init_0.7.6~bzr976-2_all.deb
+	git_1%3a2.1.4-2.1_amd64.deb
+	python-crypto_2.6.1-5+b2_amd64.deb
+	python-httplib2_0.9+dfsg-2_all.deb
+	python-jinja2_2.7.3-1_all.deb
+	python-paramiko_1.15.1-1_all.deb
+	python-setuptools_5.5.1-1_all.deb
+	sshpass_1.05-1_amd64.deb
+
+
     root# sed --in-place=.orig -e 's/^\(deb\ cdrom\:\)/\#\1/' < /etc/apt/sources.list.orig > /etc/apt/sources.list
     root# echo deb ftp://ftp.us.debian.org/debian jessie main non-free contrib > /etc/apt/sources.list.d/tempsrc.list
     root# apt-get update
@@ -248,35 +322,12 @@ TODO... https://lonesysadmin.net/2013/03/26/preparing-linux-template-vms/
 
 On the host, run the following to create the base VM OVA:
 
-    host$ VBoxManage export ${VMNAME} --output "${EXPORTED_VMS}/vdi-base.ova"
+    host$ VBoxManage export ${VM_NAME} --output "${EXPORTED_VMS}/vdi-base.ova"
 
 Remove the VM from the VirtualBox inventory. This will delete all files
 pertaining to the VM, but it's OK since we can get them back from vdi-base.ova.
 
-    host$ VBoxManage unregistervm ${VMNAME} --delete
-
-
-Provision Base Instance
-================================================================================
-
-Using the vdi-base.ova and the cloud-init-seed.iso built above, this section
-provisions a new VDI.
-
-    host$ VBoxManage import "${EXPORTED_VMS}/vdi-base.ova" --vsys 0 --vmname ${VMNAME} && VBoxManage storageattach ${VMNAME} --storagectl "IDE" --port 0 --device 0 --type dvddrive --medium "${EXPORTED_VMS}/cloud-init-seed.iso"
-
-Start the VM:
-
-    host$ VBoxManage startvm ${VMNAME}
-
-Wait for the VM to power itself down. This should take around TODO minutes.
-
-If desired, tail /var/log/syslog on the VM to monitor cloud-init progress.
-
-If there is any trouble, run the following to destroy and recreate the VM:
-
-    host$ VBoxManage controlvm ${VMNAME} poweroff; VBoxManage unregistervm ${VMNAME} --delete; sleep 2; VBoxManage import "${EXPORTED_VMS}/vdi-base.ova" --vsys 0 --vmname ${VMNAME} && VBoxManage storageattach ${VMNAME} --storagectl "IDE" --port 0 --device 0 --type dvddrive --medium "${EXPORTED_VMS}/cloud-init-seed.iso" && VBoxManage startvm ${VMNAME}
-
-Note that the command above will power down the VM hard.
+    host$ VBoxManage unregistervm ${VM_NAME} --delete
 
 
 TODO Delete....
@@ -284,7 +335,7 @@ TODO Delete....
 
 Monitor progress (TODO if headless):
 
-    host$ while [ 1 ]; do VBoxManage showvminfo ${VMNAME} | grep State; sleep 30; done
+    host$ while [ 1 ]; do VBoxManage showvminfo ${VM_NAME} | grep State; sleep 30; done
 
 Wait for state to go from running to powered off.
 
