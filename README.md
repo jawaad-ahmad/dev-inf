@@ -99,8 +99,6 @@ Internet.
     $ cd dev-inf
     $ ./init.sh
 
-(TODO init.sh does not yet exist.)
-
 
 Create cloud-init-seed.iso
 ================================================================================

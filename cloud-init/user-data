@@ -27,10 +27,9 @@ mounts:
 runcmd:
   - dpkg --install /media/cdrom0/software/applications/ansible/ansible_2.2.1.0-1ppa~trusty_all.deb
   - /bin/rm /etc/apt/sources.list.d/cloud-init.tmp.list
-  - ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+#TODO Delete  - ssh-keyscan -H github.com >> ~/.ssh/known_hosts
 # TODO Run git as someone other than root? change .gitconfig path above
-  - git clone --recursive https://github.com/jawaad-ahmad/dev-inf.git /root/repo/dev-inf
-  - cd /root/repo/dev-inf
-# TODO
-#  - ./init.sh
+  - su - ansible 'git clone --recursive https://github.com/jawaad-ahmad/dev-inf.git /home/ansible/repo/dev-inf'
+  - cd /home/ansible/repo/dev-inf
+  - ./init.sh
   - ansible-playbook site.yml
