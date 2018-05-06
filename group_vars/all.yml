@@ -1,3 +1,7 @@
+---
+# TODO This is duplicated in the original group_vars/all.yml - can they be consolidted?
+ansible_banner: "WARNING: This file is managed by ansible. DO NOT EDIT DIRECTLY!"
+
 # TODO These are duplicated in the original group_vars/all.yml - can they be consolidted?
 downloads_home: external/downloads
 downloaded_applications_home: "{{ downloads_home }}/software/applications"

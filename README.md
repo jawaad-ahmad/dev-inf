@@ -96,7 +96,7 @@ Internet.
 
     $ cd ~/repo
     $ git clone https://github.com/jawaad-ahmad/dev-inf
-    $ cd dev-inf
+    $ cd ~/repo/dev-inf
     $ ./init.sh
 
 
@@ -119,8 +119,7 @@ In a terminal on the host, run the following:
 
 Copy the cloud-init files:
 
-    $ cp ~/repo/dev-inf/cloud-init/user-data "${CI_HOME}/user-data"
-    $ cp ~/repo/dev-inf/cloud-init/meta-data "${CI_HOME}/meta-data"
+    $ cp -a ~/repo/dev-inf/cloud-init "${CI_HOME}"
     $ mkdir -p ${CI_HOME}/software/applications
     $ cp -a {${ANSIBLE_DATA_HOME},${CI_HOME}}/software/applications/ansible
 
@@ -145,7 +144,7 @@ be completed offline with one exception.
 
     $ common-inf/scripts/create-vbox-vm.sh ${VM_NAME} auto 512 10240 ${INSTALL_ISO_PATH}
 
-1. Set Networking to Host-only Adapter:
+1. Set Networking to Host-only Adapter: (TODO won't work - we need bridged later for Internet access when downloading cloud-init)
 
     $ VBoxManage modifyvm ${VM_NAME} --nic1 hostonly --hostonlyadapter1 vboxnet0
 
