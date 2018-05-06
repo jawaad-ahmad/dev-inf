@@ -25,13 +25,12 @@ mounts:
   - [ /dev/sr0, /media/cdrom0, auto, "ro" ]
 
 runcmd:
-  - dpkg --install /media/cdrom0/software/applications/ansible/ansible_2.2.1.0-1ppa~trusty_all.deb
-  - /bin/rm /etc/apt/sources.list.d/cloud-init.tmp.list
-#TODO Delete  - ssh-keyscan -H github.com >> ~/.ssh/known_hosts
-# TODO Run git as someone other than root? change .gitconfig path above
-  - su - ansible -c '/bin/echo "ansible ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/ansible'
-  - su - ansible -c '/usr/bin/ssh-keygen -t rsa -N "" -C "ansible@vdi" -f ${HOME}/.ssh/id_rsa'
-  - su - ansible -c 'cat ${HOME}/.ssh/id_rsa.pub >> ${HOME}/.ssh/authorized_keys'
-  - su - ansible -c '/usr/bin/ssh-keyscan -H localhost >> "${HOME}/.ssh/known_hosts"'
-  - su - ansible -c '/usr/bin/git clone --recursive https://github.com/jawaad-ahmad/dev-inf.git ${HOME}/repo/dev-inf'
-  - su - ansible -c 'cd ${HOME}/repo/dev-inf && ./init.sh && /usr/bin/ansible-playbook site.yml'
+  - 'dpkg --install /media/cdrom0/software/applications/ansible/ansible_2.2.1.0-1ppa~trusty_all.deb'
+  - '/bin/rm /etc/apt/sources.list.d/cloud-init.tmp.list'
+  - '/bin/echo "ansible ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/ansible'
+  - 'su - ansible -c "/usr/bin/ssh-keygen -t rsa -N \"\" -C \"ansible@vdi\" -f /home/ansible/.ssh/id_rsa"'
+  - 'su - ansible -c "cat /home/ansible/.ssh/id_rsa.pub >> /home/ansible/.ssh/authorized_keys"'
+  - 'su - ansible -c "/usr/bin/ssh-keyscan -H localhost >> \"/home/ansible/.ssh/known_hosts\""'
+  - 'su - ansible -c "/usr/bin/git clone --recursive https://github.com/jawaad-ahmad/dev-inf.git /home/ansible/repo/dev-inf"'
+  - 'su - ansible -c "cd /home/ansible/repo/dev-inf && ./init.sh && /usr/bin/ansible-playbook site.yml"'
+  - '/bin/echo "Completed running runcmd:user-data in cloud-init"'
