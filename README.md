@@ -50,6 +50,8 @@ Provision Base Instance
 Using the vdi-base.ova and the cloud-init-seed.iso built as described below,
 this section provisions a new VDI.
 
+Begin by importing the OVA and attaching the ISO as its CD-ROM drive:
+
     host$ VBoxManage import "${EXPORTED_VMS}/vdi-base.ova" --vsys 0 --vmname ${VM_NAME} && VBoxManage storageattach ${VM_NAME} --storagectl "IDE" --port 0 --device 0 --type dvddrive --medium "${EXPORTED_VMS}/cloud-init-seed.iso"
 
 Start the VM:
@@ -58,13 +60,16 @@ Start the VM:
 
 Wait for the VM to power itself down. This should take around TODO minutes.
 
-If desired, tail /var/log/syslog on the VM to monitor cloud-init progress.
+If desired, tail /var/log/cloud-init-output.log on the VM to monitor cloud-init progress.
 
 If there is any trouble, run the following to destroy and recreate the VM:
 
     host$ VBoxManage controlvm ${VM_NAME} poweroff; VBoxManage unregistervm ${VM_NAME} --delete; sleep 2; VBoxManage import "${EXPORTED_VMS}/vdi-base.ova" --vsys 0 --vmname ${VM_NAME} && VBoxManage storageattach ${VM_NAME} --storagectl "IDE" --port 0 --device 0 --type dvddrive --medium "${EXPORTED_VMS}/cloud-init-seed.iso" && VBoxManage startvm ${VM_NAME}
 
-Note that the command above will power down the VM hard.
+Note that the command above will power down the VM hard. Ideally, it would be
+nicer to run something like sudo poweroff from inside the VM. If you get a DHCP
+lease, this might help to preserve your assigned IP address while
+troubleshooting depending on your router.
 
 
 Next Steps
@@ -90,9 +95,10 @@ rebuild of the seed.iso is desired.
 **Note:** The following expects a network connection is available to the
 Internet.
 
-1. Download Debian ISO (TODO which one?) and save as ${INSTALL_ISO_PATH}.
+Begin by downloading the desired Debian ISO for installing Debian. Save this as
+${INSTALL_ISO_PATH}.
 
-1. Clone the git repo containing the VDI infrastructure.
+Then, clone the git repo containing the VDI infrastructure.
 
     $ cd ~/repo
     $ git clone https://github.com/jawaad-ahmad/dev-inf
@@ -117,6 +123,11 @@ In a terminal on the host, run the following:
     $ CI_HOME=/tmp/cloud-init
     $ mkdir -p "${CI_HOME}"
 
+Ensure your ${ANSIBLE_DATA_HOME} contains the following:
+
+    $ ls -l ${ANSIBLE_DATA_HOME}
+    TODO...
+
 Copy the cloud-init files:
 
     $ cp -a ~/repo/dev-inf/cloud-init "${CI_HOME}"
@@ -140,19 +151,19 @@ rebuild of the vdi-base.ova is desired.
 above have been completed adequately, then the remainder of this procedure can
 be completed offline with one exception.
 
-1. Run the following to create the VM.
+Run the following to create the VM.
 
     $ common-inf/scripts/create-vbox-vm.sh ${VM_NAME} auto 512 10240 ${INSTALL_ISO_PATH}
 
-1. Set Networking to Host-only Adapter: (TODO won't work - we need bridged later for Internet access when downloading cloud-init)
+Set Networking to Host-only Adapter: (TODO won't work - we need bridged later for Internet access when downloading cloud-init)
 
     $ VBoxManage modifyvm ${VM_NAME} --nic1 hostonly --hostonlyadapter1 vboxnet0
 
-1. Start the VM:
+Start the VM:
 
     $ VBoxManage startvm ${VM_NAME}
 
-1. Follow the prompts:
+Follow the prompts:
 
   * Boot menu: Install
   * Select a language: English
@@ -183,7 +194,7 @@ be completed offline with one exception.
      * Use a network mirror? No
   * Configure popularity-contest: No
   * Software selection:
-     * Uncheck Debian desktop environment
+     * Uncheck Debian desktop environment **(TODO might want to check this so ansible runs faster later--for now basic-workstation is set to have this disabled assuming it's checked here, and this gives the user better control whether or not they want a desktop environment)**
      * Uncheck print server
      * Check SSH server **(IMPORTANT)**
      * Leave standard system utilities checked
@@ -193,10 +204,10 @@ be completed offline with one exception.
      * /dev/sda
   * Finish the installation: Continue
 
-1. Remove any installation CDs or USB drives and reboot the VM. Do not power off
+Remove any installation CDs or USB drives and reboot the VM. Do not power off
 the VM at this point; let it continue to come up.
 
-1. Set BIOS boot order as applicable to boot from the appropriate drive.
+Set BIOS boot order as applicable to boot from the appropriate drive.
 
 
 Verify Networking
@@ -245,7 +256,8 @@ On the host:
 
 Run the following in a terminal on the VDI guest:
 
-(TODO clean-up)
+*(TODO The list below needs to be cleaned-up. For now, simply install
+cloud-init with)*
 
     vdi$ sudo -i
     root# mount /media/cdrom0
