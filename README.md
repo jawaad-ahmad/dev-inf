@@ -355,7 +355,7 @@ rebuild of the vdi-base.ova is desired.
 Run the following in a terminal on the VDI host to clean up the VM hard drive
 and power off the VM:
 
-    vdi$ wget -O /tmp/export-prep.sh 'https://raw.githubusercontent.com/jawaad-ahmad/common-inf/scripts/export-prep.sh'
+    vdi$ for s in export-prep.sh zero-free-space.sh; do wget -O /tmp/${s} "https://raw.githubusercontent.com/jawaad-ahmad/common-inf/scripts/${s}"; chmod +x /tmp/${s}; done
     vdi$ sudo -i
     root# /bin/rm /etc/apt/sources.list.d/tempsrc.list
     root# /bin/sh /tmp/export-prep.sh
