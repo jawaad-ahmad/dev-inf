@@ -189,10 +189,6 @@ Run the following to create the VM.
 
     $ common-inf/scripts/create-vbox-vm.sh ${VM_NAME} auto 512 10240 ${INSTALL_ISO_PATH}
 
-Set Networking to Host-only Adapter: (TODO won't work - we need bridged later for Internet access when downloading cloud-init)
-
-    $ VBoxManage modifyvm ${VM_NAME} --nic1 hostonly --hostonlyadapter1 vboxnet0
-
 Start the VM:
 
     $ VBoxManage startvm ${VM_NAME}
@@ -373,6 +369,13 @@ pertaining to the VM, but it's OK since we can get them back from vdi-base.ova.
 
 TODO Delete....
 =================
+
+The rest of this document isn't needed; it can be deleted.
+
+Set Networking to Host-only Adapter: (TODO won't work - we need bridged later for Internet access when downloading cloud-init)
+
+    $ VBoxManage modifyvm ${VM_NAME} --nic1 hostonly --hostonlyadapter1 vboxnet0
+
 
 Monitor progress (TODO if headless):
 
