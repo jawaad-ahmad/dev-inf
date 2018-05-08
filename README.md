@@ -24,7 +24,6 @@ References
 ================================================================================
 
   * https://medium.com/@mvuksano/automated-provisioning-of-virtual-machines-for-development-8a543e435f44
-  * https://lonesysadmin.net/2013/03/26/preparing-linux-template-vms/
 
 
 Variables
@@ -126,7 +125,42 @@ In a terminal on the host, run the following:
 Ensure your ${ANSIBLE_DATA_HOME} contains the following:
 
     $ ls -l ${ANSIBLE_DATA_HOME}
-    TODO...
+    software/applications/ansible/ansible_2.2.1.0-1ppa~trusty_all.deb
+    software/applications/ansible/cloud-init_0.7.6~bzr976-2_all.deb
+    TODO {
+    software/applications/ansible/dh-python_1.20141111-2_all.deb
+    software/applications/ansible/git_1%3a2.1.4-2.1_amd64.deb
+    software/applications/ansible/libmpdec2_2.4.1-1_amd64.deb
+    software/applications/ansible/libpython3-stdlib_3.4.2-2_amd64.deb
+    software/applications/ansible/libpython3.4-stdlib_3.4.2-1_amd64.deb
+    software/applications/ansible/libpython3.4-minimal_3.4.2-1_amd64.deb
+    software/applications/ansible/libyaml-0-2_0.1.6-3_amd64.deb
+    software/applications/ansible/python3.4_3.4.2-1_amd64.deb
+    software/applications/ansible/python3-apt_0.9.3.12_amd64.deb
+    software/applications/ansible/python-configobj_5.0.6-1_all.deb
+    software/applications/ansible/python3_3.4.2-2_amd64.deb
+    software/applications/ansible/python-json-pointer_1.0-2_all.deb
+    software/applications/ansible/python-jsonpatch_1.3-5_all.deb
+    software/applications/ansible/python-crypto_2.6.1-5+b2_amd64.deb
+    software/applications/ansible/python-serial_2.6-1.1_all.deb
+    software/applications/ansible/python-prettytable_0.7.2-3_all.deb
+    software/applications/ansible/python-setuptools_5.5.1-1_all.deb
+    software/applications/ansible/python3-minimal_3.4.2-2_amd64.deb
+    software/applications/ansible/python3.4-minimal_3.4.2-1_amd64.deb
+    software/applications/ansible/python-boto_2.34.0-2_all.deb
+    software/applications/ansible/python-cheetah_2.4.4-3_amd64.deb
+    software/applications/ansible/python-httplib2_0.9+dfsg-2_all.deb
+    software/applications/ansible/python-jinja2_2.7.3-1_all.deb
+    software/applications/ansible/python-oauth_1.0.1-4_all.deb
+    software/applications/ansible/python-paramiko_1.15.1-1_all.deb
+    software/applications/ansible/python-requests_2.4.3-6_all.deb
+    software/applications/ansible/python-software-properties_0.92.25debian1_all.deb
+    software/applications/ansible/python-urllib3_1.9.1-3_all.deb
+    software/applications/ansible/python-yaml_3.11-2_amd64.deb
+    software/applications/ansible/sshpass_1.05-1_amd64.deb
+    software/applications/ansible/unattended-upgrades_0.83.3.2+deb8u1_all.deb
+    }
+    software/applications/node-v6.10.1-linux-x64.tar.xz
 
 Copy the cloud-init files:
 
@@ -321,12 +355,10 @@ rebuild of the vdi-base.ova is desired.
 Run the following in a terminal on the VDI host to clean up the VM hard drive
 and power off the VM:
 
+    vdi$ wget -O /tmp/export-prep.sh 'https://raw.githubusercontent.com/jawaad-ahmad/common-inf/scripts/export-prep.sh'
     vdi$ sudo -i
     root# /bin/rm /etc/apt/sources.list.d/tempsrc.list
-
-TODO... https://lonesysadmin.net/2013/03/26/preparing-linux-template-vms/
-
-    root# echo TODO - clean-up - prepare for export (zero-wipe free space, remove keys, etc???)
+    root# /bin/sh /tmp/export-prep.sh
     root# poweroff
 
 On the host, run the following to create the base VM OVA:
@@ -362,6 +394,12 @@ VM hard from the Virtual Box Manager.)
 
 Copy the contents of the public key. Paste below when entering the contents of
 user-data.
+
+TODO...
+
+   pxe-servers:late-command.sh
+   $ VBoxManage controlvm ${VM_NAME} poweroff; VBoxManage unregistervm ${VM_NAME} --delete; sleep 2; /bin/rm -Rf ${CI_HOME}; cp -a ~/repo/dev-inf/cloud-init ${CI_HOME} && mkdir -p ${CI_HOME}/software && cp -a ${ANSIBLE_DATA_HOME}/software/applications ${CI_HOME}}/software && genisoimage -output "${EXPORTED_VMS}/cloud-init-seed.iso" -volid cidata -R -J "${CI_HOME}" && VBoxManage import "${EXPORTED_VMS}/vdi-base.ova" --vsys 0 --vmname ${VM_NAME} && VBoxManage storageattach ${VM_NAME} --storagectl "IDE" --port 0 --device 0 --type dvddrive --medium "${EXPORTED_VMS}/cloud-init-seed.iso" && VBoxManage startvm ${VM_NAME}
+   $ for ip in 15; do ssh-keygen -f "/home/jawaad/.ssh/known_hosts" -R 192.168.1.${ip} && ssh-keyscan -H 192.168.1.${ip} >> ~/.ssh/known_hosts && ssh ansible@192.168.1.${ip}; done
 
 
 Install SSH Authorized Key
