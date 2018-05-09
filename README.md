@@ -24,6 +24,7 @@ References
 ================================================================================
 
   * https://medium.com/@mvuksano/automated-provisioning-of-virtual-machines-for-development-8a543e435f44
+  * https://vladimir-ivanov.net/how-to-compact-virtualboxs-vdmk-file-size/
 
 
 Variables
@@ -46,12 +47,12 @@ The following variables are used throughout this procedure:
 Provision Base Instance
 ================================================================================
 
-Using the vdi-base.ova and the cloud-init-seed.iso built as described below,
+Using the vdi-base.ova and the cloud-init seed.iso built as described below,
 this section provisions a new VDI.
 
 Begin by importing the OVA and attaching the ISO as its CD-ROM drive:
 
-    host$ VBoxManage import "${EXPORTED_VMS}/vdi-base.ova" --vsys 0 --vmname ${VM_NAME} && VBoxManage storageattach ${VM_NAME} --storagectl "IDE" --port 0 --device 0 --type dvddrive --medium "${EXPORTED_VMS}/cloud-init-seed.iso"
+    host$ VBoxManage import "${EXPORTED_VMS}/vdi-base.ova" --vsys 0 --vmname ${VM_NAME} && VBoxManage storageattach ${VM_NAME} --storagectl "IDE" --port 0 --device 0 --type dvddrive --medium "${EXPORTED_VMS}/cloud-init/seed.iso"
 
 Start the VM:
 
@@ -63,7 +64,7 @@ If desired, tail /var/log/cloud-init-output.log on the VM to monitor cloud-init 
 
 If there is any trouble, run the following to destroy and recreate the VM:
 
-    host$ VBoxManage controlvm ${VM_NAME} poweroff; VBoxManage unregistervm ${VM_NAME} --delete; sleep 2; VBoxManage import "${EXPORTED_VMS}/vdi-base.ova" --vsys 0 --vmname ${VM_NAME} && VBoxManage storageattach ${VM_NAME} --storagectl "IDE" --port 0 --device 0 --type dvddrive --medium "${EXPORTED_VMS}/cloud-init-seed.iso" && VBoxManage startvm ${VM_NAME}
+    host$ VBoxManage controlvm ${VM_NAME} poweroff; VBoxManage unregistervm ${VM_NAME} --delete; sleep 2; VBoxManage import "${EXPORTED_VMS}/vdi-base.ova" --vsys 0 --vmname ${VM_NAME} && VBoxManage storageattach ${VM_NAME} --storagectl "IDE" --port 0 --device 0 --type dvddrive --medium "${EXPORTED_VMS}/cloud-init/seed.iso" && VBoxManage startvm ${VM_NAME}
 
 Note that the command above will power down the VM hard. Ideally, it would be
 nicer to run something like sudo poweroff from inside the VM. If you get a DHCP
@@ -105,7 +106,7 @@ Then, clone the git repo containing the VDI infrastructure.
     $ ./init.sh
 
 
-Create cloud-init-seed.iso
+Create cloud-init seed.iso
 ================================================================================
 
 **Note:** This section only needs to be run once to create the seed.iso
@@ -226,7 +227,13 @@ Follow the prompts:
      * Use a network mirror? No
   * Configure popularity-contest: No
   * Software selection:
-     * Uncheck Debian desktop environment **(TODO might want to check this so ansible runs faster later--for now basic-workstation is set to have this disabled assuming it's checked here, and this gives the user better control whether or not they want a desktop environment)**
+     * Check or uncheck Debian desktop environment:
+        * **For a VDI image:** You can check this so the initial install is
+          faster by installing packages initally from the local installation
+          media rather than downloading from the Internet; any updates will be
+          installed later anyway.
+        * **For a deployment server:** You will not want a graphical
+          environment, so make sure to uncheck this.
      * Uncheck print server
      * Check SSH server **(IMPORTANT)**
      * Leave standard system utilities checked
@@ -274,8 +281,8 @@ Install Cloud-Init
 file. If this section was previously run, then it can be skipped unless
 rebuild of the vdi-base.ova is desired.
 
-**Note:** This section needs the cloud-init-seed.iso image created in the
-**Create cloud-init-seed.iso** section. Ensure that section is run prior to
+**Note:** This section needs the cloud-init seed.iso image created in the
+**Create cloud-init seed.iso** section. Ensure that section is run prior to
 continuing.
 
 On the host:
@@ -291,7 +298,6 @@ Run the following in a terminal on the VDI guest:
     root# apt-get update
     root# apt-get install --assume-yes cloud-init git python-crypto python-httplib2 python-jinja2 python-paramiko python-setuptools sshpass
     root# dpkg --install /media/cdrom0/software/applications/ansible/ansible_2.2.1.0-1ppa~trusty_all.deb
-    root# exit
 
 
 Export Base VM
@@ -302,16 +308,44 @@ file. If this section was previously run, then it can be skipped unless
 rebuild of the vdi-base.ova is desired.
 
 Run the following in a terminal on the VDI host to clean up the VM hard drive
-and power off the VM:
+and then power off the VM:
 
+    root# /bin/rm /etc/apt/sources.list.d/tempsrc.list
     root# /bin/mkdir /tmp2
     root# for s in export-prep.sh zero-free-space.sh; do wget -O /tmp2/${s} "https://raw.githubusercontent.com/jawaad-ahmad/common-inf/master/scripts/${s}"; chmod +x /tmp2/${s}; done
-    root# /tmp2/export-prep.sh 13579
+    root# /tmp2/export-prep.sh
+    root# for f in /tmp2/*; do shred --iterations=1 --zero ${f}; done
     root# /bin/rm -Rf /tmp2
-    root# /bin/rm /etc/apt/sources.list.d/tempsrc.list
     root# poweroff
 
-On the host, run the following to create the base VM OVA:
+(TODO Not sure about the re-thinning yet; didn't check to see the original
+VMDK file size before exporting; simply noticed the imported VMDK was a
+whopping 4 GB. Need to go through this one more time to make sure this is
+useful, because at the moment it didn't do anything to reduce the file size.)
+
+The export-prep.sh script filled the virtual hard drive free space with zeroes,
+but Virtual Box exporting doesn't appear to be great at excluding those in the
+OVA. Let's compact the hard drive before the export on the host:
+
+    host$ cd ${HOME}/VirtualBox\ VMs/${VM_NAME}
+    host$ vdiDiskVmdk=vdi-base-disk1.vmdk
+    host$ vdiDiskVdi=vdi-base-disk1.vdi
+    host$ hddUuid="$(VBoxManage showhdinfo vdi-base-disk1.vmdk  | awk -F ' ' '/^UUID\:/ { print $2; }')"
+
+Convert the virtual hard drive to VDI format, compact it, and then convert it
+back to VMDK format:
+
+    host$ VBoxManage clonehd ${vdiDiskVmdk} ${vdiDiskVdi} --format vdi
+    host$ VBoxManage modifyhd ${vdiDiskVdi} --compact
+    host$ /bin/rm ${vdiDiskVmdk}
+    host$ VBoxManage clonehd ${vdiDiskVdi} ${vdiDiskVmdk} --format vmdk
+    host$ /bin/rm ${vdiDiskVdi}
+
+Finally, set the original UUID:
+
+    host$ VBoxManage internalcommands sethduuid ${vdiDiskVmdk} ${hddUuid}
+
+Now, run the following to create the base VM OVA:
 
     host$ VBoxManage export ${VM_NAME} --output "${EXPORTED_VMS}/vdi-base.ova"
 
@@ -362,7 +396,7 @@ user-data.
 TODO...
 
    pxe-servers:late-command.sh
-   $ VBoxManage controlvm ${VM_NAME} poweroff; VBoxManage unregistervm ${VM_NAME} --delete; sleep 2; /bin/rm -Rf ${CI_HOME}; cp -a ~/repo/dev-inf/cloud-init ${CI_HOME} && mkdir -p ${CI_HOME}/software && cp -a ${ANSIBLE_DATA_HOME}/software/applications ${CI_HOME}}/software && genisoimage -output "${EXPORTED_VMS}/cloud-init-seed.iso" -volid cidata -R -J "${CI_HOME}" && VBoxManage import "${EXPORTED_VMS}/vdi-base.ova" --vsys 0 --vmname ${VM_NAME} && VBoxManage storageattach ${VM_NAME} --storagectl "IDE" --port 0 --device 0 --type dvddrive --medium "${EXPORTED_VMS}/cloud-init-seed.iso" && VBoxManage startvm ${VM_NAME}
+   $ VBoxManage controlvm ${VM_NAME} poweroff; VBoxManage unregistervm ${VM_NAME} --delete; sleep 2; /bin/rm -Rf ${CI_HOME}; cp -a ~/repo/dev-inf/cloud-init ${CI_HOME} && mkdir -p ${CI_HOME}/software && cp -a ${ANSIBLE_DATA_HOME}/software/applications ${CI_HOME}}/software && genisoimage -output "${EXPORTED_VMS}/cloud-init/seed.iso" -volid cidata -R -J "${CI_HOME}" && VBoxManage import "${EXPORTED_VMS}/vdi-base.ova" --vsys 0 --vmname ${VM_NAME} && VBoxManage storageattach ${VM_NAME} --storagectl "IDE" --port 0 --device 0 --type dvddrive --medium "${EXPORTED_VMS}/cloud-init/seed.iso" && VBoxManage startvm ${VM_NAME}
    $ for ip in 15; do ssh-keygen -f "/home/jawaad/.ssh/known_hosts" -R 192.168.1.${ip} && ssh-keyscan -H 192.168.1.${ip} >> ~/.ssh/known_hosts && ssh ansible@192.168.1.${ip}; done
 
 
