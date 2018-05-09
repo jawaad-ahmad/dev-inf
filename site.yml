@@ -9,6 +9,7 @@
      - [ "group_vars/arch_{{ ansible_architecture }}.yml", "group_vars/arch_defaults.yml" ]
   roles:
      - common
+     - package-manager-clients
 
 - name: deploy development clients
   hosts: dev-clients
