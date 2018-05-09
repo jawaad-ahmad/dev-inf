@@ -124,10 +124,10 @@ In a terminal on the host, run the following:
 
 Ensure your ${ANSIBLE_DATA_HOME} contains the following:
 
-    $ ls -l ${ANSIBLE_DATA_HOME}
+    $ find ${ANSIBLE_DATA_HOME} -type f
     software/applications/ansible/ansible_2.2.1.0-1ppa~trusty_all.deb
     software/applications/ansible/cloud-init_0.7.6~bzr976-2_all.deb
-    TODO {
+TODO Delete? {
     software/applications/ansible/dh-python_1.20141111-2_all.deb
     software/applications/ansible/git_1%3a2.1.4-2.1_amd64.deb
     software/applications/ansible/libmpdec2_2.4.1-1_amd64.deb
@@ -159,19 +159,19 @@ Ensure your ${ANSIBLE_DATA_HOME} contains the following:
     software/applications/ansible/python-yaml_3.11-2_amd64.deb
     software/applications/ansible/sshpass_1.05-1_amd64.deb
     software/applications/ansible/unattended-upgrades_0.83.3.2+deb8u1_all.deb
-    }
+}
     software/applications/node-v6.10.1-linux-x64.tar.xz
 
 Copy the cloud-init files:
 
-    $ cp -a ~/repo/dev-inf/cloud-init "${CI_HOME}"
+    $ cp -a ~/repo/dev-inf/cloud-init/* "${CI_HOME}"
     $ mkdir -p ${CI_HOME}/software/applications
     $ cp -a {${ANSIBLE_DATA_HOME},${CI_HOME}}/software/applications/ansible
 
 Generate the cloud-init seed ISO:
 
     $ mkdir -p "${EXPORTED_VMS}/cloud-init"
-    $ genisoimage -output "${EXPORTED_VMS}/cloud-init-seed.iso" -volid cidata -R -J "${CI_HOME}"
+    $ genisoimage -output "${EXPORTED_VMS}/cloud-init/seed.iso" -volid cidata -R -J "${CI_HOME}"
 
 
 Bootstrap Base Install
@@ -184,6 +184,8 @@ rebuild of the vdi-base.ova is desired.
 **Note:** This section assumes no network connection is available. If the steps
 above have been completed adequately, then the remainder of this procedure can
 be completed offline with one exception.
+
+**Note:** Running this section should take approximately 35 minutes.
 
 Run the following to create the VM.
 
@@ -235,7 +237,10 @@ Follow the prompts:
   * Finish the installation: Continue
 
 Remove any installation CDs or USB drives and reboot the VM. Do not power off
-the VM at this point; let it continue to come up.
+the VM at this point; let it continue to come up unless...
+
+If desired, this would be a good point to power off the VM and take a snapshot
+if experimenting in order to restore back to this snapshot later.
 
 Set BIOS boot order as applicable to boot from the appropriate drive.
 
@@ -252,20 +257,13 @@ type:
 
     vdi$ /sbin/ifconfig -a
 
-Verify eth0 has an IP address available: 192.168.56.___
+Verify eth0 has an IP address available: 192.168.___.___
 
 From a terminal on the host, try to ssh into the VM using this IP address.
 
-    host$ vdi_ip_addr=192.168.56.___
+    host$ vdi_ip_addr=192.168.___.___
     host$ ssh ${USERNAME}@${vdi_ip_addr}
     Enter password:
-    vdi$
-
-From the VM, verify the host is available:
-
-    vdi$ ssh user@192.168.56.1
-    Enter password:
-    host$ exit
     vdi$
 
 
@@ -282,63 +280,18 @@ continuing.
 
 On the host:
 
-    host$ VBoxManage storageattach ${VM_NAME} --storagectl "IDE" --port 0 --device 0 --type dvddrive --medium "${EXPORTED_VMS}/cloud-init-seed.iso"
+    host$ VBoxManage storageattach ${VM_NAME} --storagectl "IDE" --port 0 --device 0 --type dvddrive --medium "${EXPORTED_VMS}/cloud-init/seed.iso"
 
 Run the following in a terminal on the VDI guest:
 
-*(TODO The list below needs to be cleaned-up. For now, simply install
-cloud-init with)*
-
     vdi$ sudo -i
-    root# mount /media/cdrom0
-    root# for p in \
-       python-cheetah_2.4.4-3_amd64.deb \
-       python-configobj_5.0.6-1_all.deb \
-       python-jsonpatch_1.3-5_all.deb \
-       python-oauth_1.0.1-4_all.deb \
-       python-prettytable_0.7.2-3_all.deb \
-       python-serial_2.6-1.1_all.deb \
-       python-urllib3_1.9.1-3_all.deb \
-       python-json-pointer_1.0-2_all.deb \
-       libyaml-0-2_0.1.6-3_amd64.deb \
-       python-requests_2.4.3-6_all.deb \
-       python-boto_2.34.0-2_all.deb \
-       python-yaml_3.11-2_amd64.deb \
-       libpython3.4-minimal_3.4.2-1_amd64.deb \
-       libmpdec2_2.4.1-1_amd64.deb \
-       libpython3.4-stdlib_3.4.2-1_amd64.deb \
-       libpython3-stdlib_3.4.2-2_amd64.deb \
-       python3.4-minimal_3.4.2-1_amd64.deb \
-       python3-minimal_3.4.2-2_amd64.deb \
-       python3.4_3.4.2-1_amd64.deb \
-
-       python3_3.4.2-2_amd64.deb \
-       python3-apt_0.9.3.12_amd64.deb \
-       dh-python_1.20141111-2_all.deb \
-       unattended-upgrades_0.83.3.2+deb8u1_all.deb \
-       python-software-properties_0.92.25debian1_all.deb \
-       cloud-init_0.7.6~bzr976-2_all.deb;
-    do
-       dpkg --install /media/cdrom0/software/applications/ansible/${p};
-    done
-
-
-
-ansible_2.2.1.0-1ppa~trusty_all.deb
-	cloud-init_0.7.6~bzr976-2_all.deb
-	git_1%3a2.1.4-2.1_amd64.deb
-	python-crypto_2.6.1-5+b2_amd64.deb
-	python-httplib2_0.9+dfsg-2_all.deb
-	python-jinja2_2.7.3-1_all.deb
-	python-paramiko_1.15.1-1_all.deb
-	python-setuptools_5.5.1-1_all.deb
-	sshpass_1.05-1_amd64.deb
-
-
-    root# sed --in-place=.orig -e 's/^\(deb\ cdrom\:\)/\#\1/' < /etc/apt/sources.list.orig > /etc/apt/sources.list
+    root# mount -o ro /media/cdrom0
+    root# sed --in-place=.orig -e 's/^\(deb\ cdrom\:\)/\#\1/' /etc/apt/sources.list
     root# echo deb ftp://ftp.us.debian.org/debian jessie main non-free contrib > /etc/apt/sources.list.d/tempsrc.list
     root# apt-get update
-    root# apt-get install --yes cloud-init
+    root# apt-get install --assume-yes cloud-init git python-crypto python-httplib2 python-jinja2 python-paramiko python-setuptools sshpass
+    root# dpkg --install /media/cdrom0/software/applications/ansible/ansible_2.2.1.0-1ppa~trusty_all.deb
+    root# exit
 
 
 Export Base VM
@@ -351,10 +304,11 @@ rebuild of the vdi-base.ova is desired.
 Run the following in a terminal on the VDI host to clean up the VM hard drive
 and power off the VM:
 
-    vdi$ for s in export-prep.sh zero-free-space.sh; do wget -O /tmp/${s} "https://raw.githubusercontent.com/jawaad-ahmad/common-inf/scripts/${s}"; chmod +x /tmp/${s}; done
-    vdi$ sudo -i
+    root# /bin/mkdir /tmp2
+    root# for s in export-prep.sh zero-free-space.sh; do wget -O /tmp2/${s} "https://raw.githubusercontent.com/jawaad-ahmad/common-inf/master/scripts/${s}"; chmod +x /tmp2/${s}; done
+    root# /tmp2/export-prep.sh 13579
+    root# /bin/rm -Rf /tmp2
     root# /bin/rm /etc/apt/sources.list.d/tempsrc.list
-    root# /bin/sh /tmp/export-prep.sh
     root# poweroff
 
 On the host, run the following to create the base VM OVA:
@@ -375,6 +329,13 @@ The rest of this document isn't needed; it can be deleted.
 Set Networking to Host-only Adapter: (TODO won't work - we need bridged later for Internet access when downloading cloud-init)
 
     $ VBoxManage modifyvm ${VM_NAME} --nic1 hostonly --hostonlyadapter1 vboxnet0
+
+From the VM, verify the host is available:
+
+    vdi$ ssh user@192.168.56.1
+    Enter password:
+    host$ exit
+    vdi$
 
 
 Monitor progress (TODO if headless):
