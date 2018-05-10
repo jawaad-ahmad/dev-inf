@@ -11,6 +11,7 @@
      - package-manager-clients
      - common-packages
      - local-user-accounts
+     - console-login-ip-addr
 
 - name: deploy development clients
   hosts: dev-clients
