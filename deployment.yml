@@ -21,4 +21,5 @@
      - [ "group_vars/arch_{{ ansible_architecture }}.yml", "group_vars/arch_defaults.yml" ]
   roles:
      - basic-workstations
+     - docker-workstations
      - npm-workstations

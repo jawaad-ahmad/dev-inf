@@ -1,0 +1,51 @@
+---
+
+- include: common-inf/roles/common-packages/tasks/pkg-install.yml package=apt-transport-https
+- include: common-inf/roles/common-packages/tasks/pkg-install.yml package=ca-certificates
+
+- name: Add Docker's official GPG key
+  apt_key:
+     id: 0EBFCD88
+     url: https://download.docker.com/linux/debian/gpg
+     state: present
+  become: yes
+
+- name: Add Docker stable repository
+  apt_repository:
+     repo: deb [arch=amd64] https://download.docker.com/linux/debian jessie stable
+     state: present
+  become: yes
+
+- name: Run apt-get update
+  apt:
+     update_cache: yes
+  become: yes
+
+- name: Install Docker
+  include: common-inf/roles/common-packages/tasks/pkg-install.yml package=docker-ce
+
+- name: Add docker group
+  group:
+     name: docker
+     system: yes
+  become: yes
+
+# TODO A restart will be needed for the following to take effect on a VM; need to somehow schedule a restart after completing and ensure it only happens on the change--not every time ansible-playbook is run.
+- name: "Add development user(s) to docker group"
+  user:
+     name: "{{ item.key }}"
+     groups: docker
+     append: yes
+  become: yes
+  with_dict: "{{ users }}"
+
+# TODO Delete debug tags
+
+# TODO install Docker Compose
+#  tags: debug
+# TODO install Docker Machine
+# TODO install Ansible?
+# TODO install git?
+# TODO install Sublime Text 3?
+# TODO install iTerm 2?
+# TODO install tree?
