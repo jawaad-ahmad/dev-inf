@@ -65,10 +65,11 @@
 #---
 
 - name: check if docker-compose is installed
-  command: /usr/bin/dpkg-query --show {{ docker_deb_pkg }}
+  command: "test -x {{ docker_deb_pkg }}"
   register: docker_compose_check_elf
   failed_when: docker_compose_check_elf.rc > 1
   changed_when: docker_compose_check_elf.rc == 1
+  tags: debug
 
 - name: install docker-compose
   copy:
@@ -77,22 +78,50 @@
      mode: 0755
   become: yes
   when: docker_compose_check_elf.rc == 1
+  tags: debug
 
-- name: install docker-compose bash completion
+- name: install docker-compose bash completion scripts
   copy:
      src: "{{ docker_compose_bash_completion_path }}"
      dest: /etc/bash_completion.d/docker-compose
      mode: 0755
   become: yes
   when: docker_compose_check_elf.rc == 1
+  tags: debug
+
+# TODO move to VDI?
+#---
+# Install docker-machine
+#---
+
+- name: check if docker-machine is installed
+  command: "test -x {{ docker_deb_pkg }}"
+  register: docker_machine_check_elf
+  failed_when: docker_machine_check_elf.rc > 1
+  changed_when: docker_machine_check_elf.rc == 1
+  tags: debug
+
+- name: install docker-machine
+  copy:
+     src: "{{ docker_machine_elf_path }}"
+     dest: /usr/local/bin/docker-machine
+     mode: 0755
+  become: yes
+  when: docker_machine_check_elf.rc == 1
+  tags: debug
+
+- name: install docker-machine bash completion scripts
+  copy:
+     src: "{{ docker_machine_bash_completion_dir }}/{{ item }}"
+     dest: "/etc/bash_completion.d/{{ item }}"
+     mode: 0755
+  with_list:
+     - docker-machine-prompt.bash
+     - docker-machine-wrapper.bash
+     - docker-machine.bash
+  become: yes
+  when: docker_machine_check_elf.rc == 1
+  tags: debug
 
 
 # TODO Delete debug tags
-
-# TODO install Docker Machine
-#  tags: debug
-# TODO install Ansible?
-# TODO install git?
-# TODO install Sublime Text 3?
-# TODO install iTerm 2?
-# TODO install tree?

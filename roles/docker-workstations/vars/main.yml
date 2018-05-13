@@ -6,3 +6,7 @@ docker_deb: "{{ downloaded_applications_home }}/docker/linux/debian/dists/jessie
 docker_compose_elf: docker-compose-Linux-x86_64
 docker_compose_elf_path: "{{ downloaded_applications_home }}/docker-compose/{{ docker_compose_elf }}"
 docker_compose_bash_completion_path: "{{ downloaded_applications_home }}/docker-compose/bash_completion/docker-compose"
+
+docker_machine_elf: docker-machine-Linux-x86_64
+docker_machine_elf_path: "{{ downloaded_applications_home }}/docker-machine/v0.14.0/{{ docker_machine_elf }}"
+docker_machine_bash_completion_dir: "{{ downloaded_applications_home }}/docker-machine/v0.14.0/bash_completion"
