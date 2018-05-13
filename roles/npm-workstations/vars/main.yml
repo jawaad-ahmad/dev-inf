@@ -1,3 +1,4 @@
 ---
 
-node_home: /opt/node-v6.10.1-linux-x64
+node_version: 8.11.1
+node_home: /opt/node-v{{ node_version }}-linux-x64
