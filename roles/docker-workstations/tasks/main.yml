@@ -1,28 +1,49 @@
 ---
 
-- include: common-inf/roles/common-packages/tasks/pkg-install.yml package=apt-transport-https
-- include: common-inf/roles/common-packages/tasks/pkg-install.yml package=ca-certificates
+#---
+# Install docker-ce
+#---
 
-- name: Add Docker's official GPG key
-  apt_key:
-     id: 0EBFCD88
-     url: https://download.docker.com/linux/debian/gpg
-     state: present
+# TODO Delete
+#- include: common-inf/roles/common-packages/tasks/pkg-install.yml package=apt-transport-https
+#- include: common-inf/roles/common-packages/tasks/pkg-install.yml package=ca-certificates
+#
+#- name: Add Docker's official GPG key
+#  apt_key:
+#     id: 0EBFCD88
+#     url: https://download.docker.com/linux/debian/gpg
+#     state: present
+#  become: yes
+#
+#- name: Add Docker stable repository
+#  apt_repository:
+#     repo: deb [arch=amd64] https://download.docker.com/linux/debian jessie stable
+#     state: present
+#  become: yes
+#
+#- name: Run apt-get update
+#  apt:
+#     update_cache: yes
+#  become: yes
+#
+#- name: Install Docker
+#  include: common-inf/roles/common-packages/tasks/pkg-install.yml package=docker-ce
+
+- name: check if docker deb is installed
+  command: /usr/bin/dpkg-query --show {{ docker_deb_pkg }}
+  register: docker_check_deb
+  failed_when: docker_check_deb.rc > 1
+  changed_when: docker_check_deb.rc == 1
+
+- name: copy docker deb
+  copy: src="{{ docker_deb }}" dest=/tmp/{{ docker_deb_pkg }}
   become: yes
+  when: docker_check_deb.rc == 1
 
-- name: Add Docker stable repository
-  apt_repository:
-     repo: deb [arch=amd64] https://download.docker.com/linux/debian jessie stable
-     state: present
+- name: install docker deb
+  apt: deb="/tmp/{{ docker_deb_pkg }}"
   become: yes
-
-- name: Run apt-get update
-  apt:
-     update_cache: yes
-  become: yes
-
-- name: Install Docker
-  include: common-inf/roles/common-packages/tasks/pkg-install.yml package=docker-ce
+  when: docker_check_deb.rc == 1
 
 - name: Add docker group
   group:
@@ -39,11 +60,37 @@
   become: yes
   with_dict: "{{ users }}"
 
+#---
+# Install docker-compose
+#---
+
+- name: check if docker-compose is installed
+  command: /usr/bin/dpkg-query --show {{ docker_deb_pkg }}
+  register: docker_compose_check_elf
+  failed_when: docker_compose_check_elf.rc > 1
+  changed_when: docker_compose_check_elf.rc == 1
+
+- name: install docker-compose
+  copy:
+     src: "{{ docker_compose_elf_path }}"
+     dest: /usr/local/bin/docker-compose
+     mode: 0755
+  become: yes
+  when: docker_compose_check_elf.rc == 1
+
+- name: install docker-compose bash completion
+  copy:
+     src: "{{ docker_compose_bash_completion_path }}"
+     dest: /etc/bash_completion.d/docker-compose
+     mode: 0755
+  become: yes
+  when: docker_compose_check_elf.rc == 1
+
+
 # TODO Delete debug tags
 
-# TODO install Docker Compose
-#  tags: debug
 # TODO install Docker Machine
+#  tags: debug
 # TODO install Ansible?
 # TODO install git?
 # TODO install Sublime Text 3?

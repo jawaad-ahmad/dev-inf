@@ -1,0 +1,8 @@
+---
+
+docker_deb_pkg: docker-ce_18.03.1-ce-0-debian_amd64.deb
+docker_deb: "{{ downloaded_applications_home }}/docker/linux/debian/dists/jessie/pool/stable/amd64/{{ docker_deb_pkg }}"
+
+docker_compose_elf: docker-compose-Linux-x86_64
+docker_compose_elf_path: "{{ downloaded_applications_home }}/docker-compose/{{ docker_compose_elf }}"
+docker_compose_bash_completion_path: "{{ downloaded_applications_home }}/docker-compose/bash_completion/docker-compose"
