@@ -11,15 +11,18 @@
      dest: /opt
      creates: "{{ node_home }}/bin/node"
   become: yes
-  tags: debug
 
+# TODO this shouldn't be needed, but the npm module in future tasks seems to complain even though the node bin directory is on the PATH below
 - name: create symlink to node executable
   file: src={{ node_home }}/bin/node dest=/usr/local/bin/node owner=root group=root state=link
   become: yes
-  tags: debug
 
+# TODO this shouldn't be needed, but the npm module in future tasks seems to complain even though the node bin directory is on the PATH below
 - name: create symlink to npm executable
   file: src={{ node_home }}/bin/npm dest=/usr/local/bin/npm owner=root group=root state=link
   become: yes
-  tags: debug
 
+- name: add node bin directory to PATH
+  template: src=etc/profile.d/node.sh.j2 dest=/etc/profile.d/node.sh owner=root group=root mode=0755
+  become: yes
+# TODO This will probably require logging-out and logging back in for the bash changes to take effect, which isn't happening right now. Is there a way to source changes in-place during this session?

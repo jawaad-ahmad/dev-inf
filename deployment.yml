@@ -13,7 +13,7 @@
      - local-user-accounts
      - console-login-ip-addr
 
-- name: deploy development clients
+- name: deploy deployment clients
   hosts: dev-clients
   user: ansible
   vars_files:

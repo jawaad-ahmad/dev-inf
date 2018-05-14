@@ -69,7 +69,6 @@
   register: docker_compose_check_elf
   failed_when: docker_compose_check_elf.rc > 1
   changed_when: docker_compose_check_elf.rc == 1
-  tags: debug
 
 - name: install docker-compose
   copy:
@@ -78,7 +77,6 @@
      mode: 0755
   become: yes
   when: docker_compose_check_elf.rc == 1
-  tags: debug
 
 - name: install docker-compose bash completion scripts
   copy:
@@ -87,7 +85,6 @@
      mode: 0755
   become: yes
   when: docker_compose_check_elf.rc == 1
-  tags: debug
 
 # TODO move to VDI?
 #---
@@ -99,7 +96,6 @@
   register: docker_machine_check_elf
   failed_when: docker_machine_check_elf.rc > 1
   changed_when: docker_machine_check_elf.rc == 1
-  tags: debug
 
 - name: install docker-machine
   copy:
@@ -108,7 +104,6 @@
      mode: 0755
   become: yes
   when: docker_machine_check_elf.rc == 1
-  tags: debug
 
 - name: install docker-machine bash completion scripts
   copy:
@@ -121,7 +116,4 @@
      - docker-machine.bash
   become: yes
   when: docker_machine_check_elf.rc == 1
-  tags: debug
 
-
-# TODO Delete debug tags

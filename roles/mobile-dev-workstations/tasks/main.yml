@@ -1,0 +1,24 @@
+---
+
+# TODO: "Failed to find required executable npm" without symlink in /usr/local/bin
+#  command: npm install -g cordova
+#  command: "echo user=[$USER] path=[$PATH]"
+#  environment:
+#     PATH: "${PATH}:/opt/node-{{ node_version }}-linux-x64/bin"
+- name: install Cordova
+  npm:
+     name: cordova
+     global: yes
+  become: yes
+
+# TODO: "Failed to find required executable npm" without symlink in /usr/local/bin
+#  command: npm install -g ionic
+#  environment:
+#     PATH: "${PATH}:/opt/node-{{ node_version }}-linux-x64/bin"
+- name: install Ionic Framework
+  npm:
+     name: ionic
+     global: yes
+  become: yes
+
+# TODO Delete debug tags
