@@ -1,3 +1,6 @@
 [submodule "common-inf"]
 	path = common-inf
 	url = https://github.com/jawaad-ahmad/common-inf.git
+[submodule "hooks"]
+	path = hooks
+	url = git@github.com:jawaad-ahmad/hooks
