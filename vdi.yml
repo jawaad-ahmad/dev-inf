@@ -10,8 +10,10 @@
   roles:
      - package-manager-clients
      - common-packages
+     - initial-setup-clients
      - local-user-accounts
      - console-login-ip-addr
+     - overridden-dns-clients
 
 - name: deploy development clients
   hosts: dev-clients
@@ -22,5 +24,6 @@
   roles:
      - basic-workstations
      - basic-graphical-workstations
+     - initial-setup-clients
      - npm-workstations
      - mobile-dev-workstations

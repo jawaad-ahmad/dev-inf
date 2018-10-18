@@ -10,8 +10,10 @@
   roles:
      - package-manager-clients
      - common-packages
+     - initial-setup-clients
      - local-user-accounts
      - console-login-ip-addr
+     - overridden-dns-clients
 
 - name: deploy deployment clients
   hosts: dev-clients
