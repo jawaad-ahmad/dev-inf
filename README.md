@@ -19,6 +19,10 @@ cloud-init ISO file that you can you repeatedly to quickly generate a
 development VDI or deployment server as often as desired from a base
 configuration maintained in a git repository.
 
+The _Provision Base Instance_ section provides instructions on how to use a
+pre-built OVA and ISO file to create and start a VM instance. The remainder of
+the document describes the process for creating the OVA and ISO files.
+
 
 References
 ================================================================================
@@ -38,7 +42,7 @@ The following variables are used throughout this procedure:
    | EXPORTED_VMS      | /path/to/ova    |
    | ANSIBLE_DATA_HOME | /path/to/files  |
    | VM_NAME           | vdi -or- deploy |
-   | HOST_NAME         | vdi -or- deploy |
+   | HOST_NAME         | ${VM_NAME}      |
    | USER_FULLNAME     | Ansible         |
    | USERNAME          | ansible         |
    | PASSWORD          | ansible         |
@@ -47,8 +51,8 @@ The following variables are used throughout this procedure:
 Provision Base Instance
 ================================================================================
 
-Using the base OVA and the cloud-init seed.iso built as described below, this
-section provisions a new VDI or deployment server.
+Using the base OVA and the cloud-init seed.iso built as described further below,
+this section provisions a new VDI or deployment server.
 
 Begin by importing the OVA and attaching the ISO as its CD-ROM drive:
 
@@ -134,12 +138,13 @@ while waiting for the installation to complete.
 In a terminal on the host, run the following:
 
     $ CI_HOME=/tmp/cloud-init
+    $ /bin/rm -Rf "${CI_HOME}"
     $ mkdir -p "${CI_HOME}"
 
 Ensure your ${ANSIBLE_DATA_HOME} contains the following:
 
     $ find ${ANSIBLE_DATA_HOME} -type f
-    software/applications/ansible/ansible_2.2.1.0-1ppa~trusty_all.deb
+    software/applications/ansible/ansible_2.7.1-1ppa~trusty_all.deb
     software/applications/ansible/cloud-init_0.7.6~bzr976-2_all.deb
 TODO Delete? {
     software/applications/ansible/dh-python_1.20141111-2_all.deb
@@ -322,7 +327,7 @@ Continue:
     root# echo deb ftp://ftp.us.debian.org/debian jessie main non-free contrib > /etc/apt/sources.list.d/tempsrc.list
     root# apt-get update
     root# apt-get install --assume-yes cloud-init git python-crypto python-httplib2 python-jinja2 python-paramiko python-setuptools sshpass
-    root# dpkg --install /media/cdrom0/software/applications/ansible/ansible_2.2.1.0-1ppa~trusty_all.deb
+    root# dpkg --install /media/cdrom0/software/applications/ansible/ansible_2.7.1-1ppa~trusty_all.deb
 
 
 Export Base VM
@@ -339,6 +344,18 @@ hard drive and then power off the VM:
     root# /bin/mkdir /tmp2
     root# for s in export-prep.sh zero-free-space.sh; do wget -O /tmp2/${s} "https://raw.githubusercontent.com/jawaad-ahmad/common-inf/master/scripts/${s}"; chmod +x /tmp2/${s}; done
     root# /tmp2/export-prep.sh
+
+TODO Observed the following messages and errors while running this:
+
+         (This section is currently unimplemented.)
+         ...
+         (This section is currently unimplemented.)
+         ...
+         Determining file name for writing. Checking //zf0...
+         Found no file //zf0
+         Writing  blocks to //zf0 (deploy only, not vdi)
+         /bin/dd: invalid number ‘’ (deploy only, not vdi)
+
     root# for f in /tmp2/*; do shred --iterations=1 --zero ${f}; done
     root# /bin/rm -Rf /tmp2
     root# poweroff
