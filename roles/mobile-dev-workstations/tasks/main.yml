@@ -1,24 +1,52 @@
 ---
 
-# TODO: "Failed to find required executable npm" without symlink in /usr/local/bin
-#  command: npm install -g cordova
-#  command: "echo user=[$USER] path=[$PATH]"
-#  environment:
-#     PATH: "${PATH}:/opt/node-{{ node_version }}-linux-x64/bin"
-- name: install Cordova
-  npm:
-     name: cordova
-     global: yes
+# TODO - Are the TODOs below here still valid?
+## TODO: "Failed to find required executable npm" without symlink in /usr/local/bin
+##  command: npm install -g cordova
+##  command: "echo user=[$USER] path=[$PATH]"
+##  environment:
+##     PATH: "${PATH}:/opt/node-{{ node_version }}-linux-x64/bin"
+#- name: install Cordova
+#  npm:
+#     name: cordova
+#     global: yes
+#  become: yes
+#
+## TODO: "Failed to find required executable npm" without symlink in /usr/local/bin
+##  command: npm install -g ionic
+##  environment:
+##     PATH: "${PATH}:/opt/node-{{ node_version }}-linux-x64/bin"
+#- name: install Ionic Framework
+#  npm:
+#     name: ionic
+#     global: yes
+#  become: yes
+
+- name: Workaround for browser-run error installing dependency electron
+  file:
+    path: "{{ node_home }}/lib/node_modules/{{ item }}"
+    owner: root
+    mode: 0755
+    state: directory
+  with_items:
+    - electron
+    - electron/.electron
+    - browser-run
+    - browser-run/node_modules
+    - browser-run/node_modules/electron
+    - browser-run/node_modules/electron/.electron
   become: yes
 
-# TODO: "Failed to find required executable npm" without symlink in /usr/local/bin
-#  command: npm install -g ionic
-#  environment:
-#     PATH: "${PATH}:/opt/node-{{ node_version }}-linux-x64/bin"
-- name: install Ionic Framework
+- name: Installing global npm packages
   npm:
-     name: ionic
+     name: "{{ item }}"
      global: yes
+  with_items:
+    - cordova
+    - ionic
+    - babel-cli
+    - tape
+    - faucet
+    - browser-run
+    - browserify
   become: yes
-
-# TODO Delete debug tags
