@@ -144,6 +144,7 @@ In a terminal on the host, run the following:
 Ensure your ${ANSIBLE_DATA_HOME} contains the following:
 
     $ find ${ANSIBLE_DATA_HOME} -type f
+    software/applications/node/v8.11.1/node-v8.11.1-linux-x64.tar.xz
     software/applications/ansible/ansible_2.7.1-1ppa~trusty_all.deb
     software/applications/ansible/cloud-init_0.7.6~bzr976-2_all.deb
 TODO Delete? {
@@ -179,7 +180,6 @@ TODO Delete? {
     software/applications/ansible/sshpass_1.05-1_amd64.deb
     software/applications/ansible/unattended-upgrades_0.83.3.2+deb8u1_all.deb
 }
-    software/applications/node-v6.10.1-linux-x64.tar.xz
 
 Copy the cloud-init files:
 
