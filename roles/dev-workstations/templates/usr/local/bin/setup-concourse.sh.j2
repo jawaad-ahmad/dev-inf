@@ -1,0 +1,30 @@
+#!/bin/sh
+# {{ ansible_banner }}
+
+DOCKER_COMPOSE=/usr/local/bin/docker-compose
+GIT=/usr/bin/git
+
+REPO_HOME="${HOME}/repo"
+
+#---
+# Main
+#---
+
+   if [ -d "${REPO_HOME}" ]; then
+      ${GIT} clone 'https://github.com/concourse/concourse-docker' ${REPO_HOME}/concourse-docker
+
+      if [ ${?} -ne 0 ]; then
+         echo "Error cloning concourse-docker repo" 1>&2
+         exit 2
+      fi
+
+      cd ${REPO_HOME}/concourse-docker
+
+      # TODO move to have this come up on VDI startup
+      ${DOCKER_COMPOSE} --file docker-compose-quickstart.yml up
+   else
+      echo "Directory ${REPO_HOME} not found" 1>&2
+      exit 1
+   fi
+
+exit 0

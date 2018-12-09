@@ -24,6 +24,8 @@
   roles:
      - basic-workstations
      - basic-graphical-workstations
+     - docker-workstations
      - initial-setup-clients
      - npm-workstations
+     - dev-workstations
      - mobile-dev-workstations
