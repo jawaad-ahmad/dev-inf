@@ -108,6 +108,8 @@ TODO Probably need these steps somewhere:
    - initial login into dev@vdi
    - place public key into dev@vdi:.ssh/authorized_keys
    - TODO run setup-concourse.sh from /usr/local/.../bin
+   - TODO download fly cli: wget -O /usr/local/bin/fly 'http://localhost:8080/api/v1/cli?arch=amd64&platform=linux' && sudo chmod +x /usr/local/bin/fly
+   - TODO fly --target ci login --concourse-url http://localhost:8080 -u test -p test
    - TODO mkdir repo
    - TODO cd repo
    - TODO git clone ...
@@ -219,7 +221,9 @@ be completed offline with one exception.
 
 Run the following to create the VM.
 
-    $ common-inf/scripts/create-vbox-vm.sh ${VM_NAME} auto 512 10240 ${INSTALL_ISO_PATH}
+    $ common-inf/scripts/create-vbox-vm.sh ${VM_NAME} auto 1024 10240 ${INSTALL_ISO_PATH}
+
+        TODO mention note that 512 MB should be enough unless also running concourse inside VM
 
 Start the VM:
 
