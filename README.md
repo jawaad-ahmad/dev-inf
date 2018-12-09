@@ -101,6 +101,17 @@ to evolve.
 As a new VM is provisioned off of the OVA, be sure to re-run Ansible upon
 provisioning to make sure you have the latest changes.
 
+TODO Probably need these steps somewhere:
+
+   - initial login into ansible@vdi
+   - TODO place public key into ansible@vdi:.ssh/authorized_keys
+   - initial login into dev@vdi
+   - place public key into dev@vdi:.ssh/authorized_keys
+   - TODO run setup-concourse.sh from /usr/local/.../bin
+   - TODO mkdir repo
+   - TODO cd repo
+   - TODO git clone ...
+
 
 Internet Downloads
 ================================================================================
