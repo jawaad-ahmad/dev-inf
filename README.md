@@ -36,16 +36,16 @@ Variables
 
 The following variables are used throughout this procedure:
 
-   | Key               | Value           |
-   |-------------------|-----------------|
-   | INSTALL_ISO_PATH  | /path/to/downloaded/Debian/jessie/debian-8.5.0-amd64-DVD-1.iso |
-   | EXPORTED_VMS      | /path/to/ova    |
-   | ANSIBLE_DATA_HOME | /path/to/files  |
-   | VM_NAME           | vdi -or- deploy |
-   | HOST_NAME         | ${VM_NAME}      |
-   | USER_FULLNAME     | Ansible         |
-   | USERNAME          | ansible         |
-   | PASSWORD          | ansible         |
+   | Key               | Value           | Notes |
+   |-------------------|-----------------|-------|
+   | INSTALL_ISO_PATH  | /path/to/downloaded/Debian/stretch/amd64/debian-9.1.0-amd64-netinst.iso | Debian installation ISO (TODO Previously full DVD ISO, let's see how the netinst ISO works) |
+   | EXPORTED_VMS      | /path/to/ova    | New directory for output OVAs |
+   | ANSIBLE_DATA_HOME | /path/to/files  | See below for expected directory structure |
+   | VM_NAME           | vdi -or- deploy |  |
+   | HOST_NAME         | ${VM_NAME}      |  |
+   | USER_FULLNAME     | Ansible         |  |
+   | USERNAME          | ansible         |  |
+   | PASSWORD          | ansible         |  |
 
 
 Provision Base Instance
@@ -223,7 +223,7 @@ Run the following to create the VM.
 
     $ common-inf/scripts/create-vbox-vm.sh ${VM_NAME} auto 1024 10240 ${INSTALL_ISO_PATH}
 
-        TODO mention note that 512 MB should be enough unless also running concourse inside VM
+**Note:** 512 MB should be enough if running without Concourse.
 
 Start the VM:
 
@@ -236,9 +236,13 @@ Follow the prompts:
   * Select your location: United States
   * Configure the keyboard: American English
   * Configure the network:
+<strike>
+{
      * eth0
      * Continue without a default route? Yes
      * Name server addresses: (blank)
+}
+</strike>
      * Hostname: $(HOST_NAME)
      * Domain name: (blank)
   * Set up users and passwords:
@@ -341,7 +345,7 @@ Continue:
     root# sed --in-place=.orig -e 's/^\(deb\ cdrom\:\)/\#\1/' /etc/apt/sources.list
     root# echo deb ftp://ftp.us.debian.org/debian jessie main non-free contrib > /etc/apt/sources.list.d/tempsrc.list
     root# apt-get update
-    root# apt-get install --assume-yes cloud-init git python-crypto python-httplib2 python-jinja2 python-paramiko python-setuptools sshpass
+    root# apt-get install --assume-yes cloud-init git python-crypto python-httplib2 python-jinja2 python-paramiko python-setuptools python-yaml sshpass
     root# dpkg --install /media/cdrom0/software/applications/ansible/ansible_2.7.1-1ppa~trusty_all.deb
 
 
@@ -368,8 +372,8 @@ TODO Observed the following messages and errors while running this:
          ...
          Determining file name for writing. Checking //zf0...
          Found no file //zf0
-         Writing  blocks to //zf0 (deploy only, not vdi)
-         /bin/dd: invalid number ‘’ (deploy only, not vdi)
+         Writing  blocks to //zf0            (deploy only, not vdi)
+         /bin/dd: invalid number ‘’          (deploy only, not vdi)
 
     root# for f in /tmp2/*; do shred --iterations=1 --zero ${f}; done
     root# /bin/rm -Rf /tmp2
@@ -380,6 +384,7 @@ VMDK file size before exporting; simply noticed the imported VMDK was a
 whopping 4 GB. Need to go through this one more time to make sure this is
 useful, because at the moment it didn't do anything to reduce the file size.)
 
+TODO (skipped this for now, will revisit later) {
 The export-prep.sh script filled the virtual hard drive free space with zeroes,
 but Virtual Box exporting doesn't appear to be great at excluding those in the
 OVA. Let's compact the hard drive before the export on the host:
@@ -401,6 +406,7 @@ back to VMDK format:
 Finally, set the original UUID:
 
     host$ VBoxManage internalcommands sethduuid ${vdiDiskVmdk} ${hddUuid}
+}
 
 Now, depending on what you're building...
 
