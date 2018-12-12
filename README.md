@@ -101,15 +101,53 @@ to evolve.
 As a new VM is provisioned off of the OVA, be sure to re-run Ansible upon
 provisioning to make sure you have the latest changes.
 
-TODO Probably need these steps somewhere:
+TODO Need these steps somewhere:
 
-   - initial login into ansible@vdi
-   - TODO place public key into ansible@vdi:.ssh/authorized_keys
-   - initial login into dev@vdi
+   - export_prep.sh wiped out the ssh keys under /etc/ssh; need to regenerate (ed25519 only for now, skip rsa)
+
+      vdi$ sudo for keytype in ed25519; do ssh-keygen -f /etc/ssh/ssh_host_${keytype}_key -N '' -t ${keytype}; done
+
+         (TODO remove rsa and others from common-inf too?)
+
+   - initial login into ansible@vdi and dev@vdi
+
+      host$ ssh ansible@vdi
+      vdi$ exit
+      host$ ssh dev@vdi
+      vdi$ exit
+
+   - place public key into ansible@vdi:.ssh/authorized_keys
+
+      host$ cat ~/.ssh/id_rsa.pub | ssh ansible@vdi 'cat - >> /home/ansible/.ssh/authorized_keys'
+      host$ ssh ansible@vdi
+
    - place public key into dev@vdi:.ssh/authorized_keys
-   - TODO run setup-concourse.sh from /usr/local/.../bin
-   - TODO download fly cli: wget -O /usr/local/bin/fly 'http://localhost:8080/api/v1/cli?arch=amd64&platform=linux' && sudo chmod +x /usr/local/bin/fly
-   - TODO fly --target ci login --concourse-url http://localhost:8080 -u test -p test
+
+      vdi$ sudo mkdir /home/dev/.ssh
+      vdi$ sudo chmod 700 /home/dev/.ssh
+      vdi$ sudo touch /home/dev/.ssh/authorized_keys
+      vdi$ sudo chmod 644 /home/dev/.ssh/authorized_keys
+      vdi$ sudo chown -R dev:dev /home/dev/.ssh
+      vdi$ sudo -i
+      vdi# tail -1 /home/ansible/.ssh/authorized_keys >> /home/dev/.ssh/authorized_keys
+      vdi# exit
+      vdi$ exit
+
+   - run setup-concourse.sh from /usr/local/.../bin
+
+      host$ ssh dev@vdi
+      vdi$ mkdir repo
+      vdi$ setup-concourse.sh
+
+   - download fly cli:
+
+      host$ ssh ansible@vdi
+      vdi$ wget -O fly 'http://localhost:8080/api/v1/cli?arch=amd64&platform=linux' && sudo chmod +x fly && sudo mv fly /usr/local/bin
+
+That's it. Now would be a good time to snapshot/backup/export the VM if desired.
+
+
+   - TODO (as dev@vdi) fly --target ci login --concourse-url http://localhost:8080 -u test -p test
    - TODO mkdir repo
    - TODO cd repo
    - TODO git clone ...
@@ -157,6 +195,17 @@ In a terminal on the host, run the following:
 Ensure your ${ANSIBLE_DATA_HOME} contains the following:
 
     $ find ${ANSIBLE_DATA_HOME} -type f
+    software/applications/docker/linux/debian/dists/stretch/pool/stable/amd64/docker-ce_18.03.1-ce-0-debian_amd64.deb
+    software/applications/docker-compose/bash_completion/docker-compose
+    software/applications/docker-compose/docker-compose-Linux-x86_64
+    software/applications/docker-compose/docker-compose-Linux-x86_64.sha256
+    software/applications/docker-machine/v0.14.0/sha256sum.txt
+    software/applications/docker-machine/v0.14.0/docker-machine-Linux-aarch64
+    software/applications/docker-machine/v0.14.0/docker-machine-Linux-armhf
+    software/applications/docker-machine/v0.14.0/docker-machine-Linux-x86_64
+    software/applications/docker-machine/v0.14.0/bash_completion/docker-machine-wrapper.bash
+    software/applications/docker-machine/v0.14.0/bash_completion/docker-machine.bash
+    software/applications/docker-machine/v0.14.0/bash_completion/docker-machine-prompt.bash
     software/applications/node/v8.11.1/node-v8.11.1-linux-x64.tar.xz
     software/applications/ansible/ansible_2.7.1-1ppa~trusty_all.deb
     software/applications/ansible/cloud-init_0.7.6~bzr976-2_all.deb

@@ -47,6 +47,7 @@
     - babel-cli
     - tape
     - faucet
-    - browser-run
+# TODO Having difficulty installing this on stretch
+#    - browser-run
     - browserify
   become: yes
