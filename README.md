@@ -270,9 +270,11 @@ be completed offline with one exception.
 
 Run the following to create the VM.
 
-    $ common-inf/scripts/create-vbox-vm.sh ${VM_NAME} auto 1024 10240 ${INSTALL_ISO_PATH}
+    $ common-inf/scripts/create-vbox-vm.sh ${VM_NAME} auto 1024 30720 ${INSTALL_ISO_PATH}
 
-**Note:** 512 MB should be enough if running without Concourse.
+**Note:** 512 MB and 10240 MB disk space should be enough if running without
+Concourse; due to Concourse, these have been raised to 1024 MB and 30720 MB,
+respectively.
 
 Start the VM:
 
